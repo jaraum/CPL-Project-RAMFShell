@@ -34,11 +34,27 @@ static bool can_write(const FD *fd) {
 }
 
 static node *new_node(int type, char *name) {
+  node *result = calloc(1, sizeof(node));
+  if (result == NULL) return NULL;
 
+  result->type = type;
+  result->name = malloc(strlen(name) + 1);
+  if (result->name == NULL) {
+    free(result);
+    return NULL;
+  }
+  strcpy(result->name, name);
+  return result;
 }
 
-static node *find_child(const char *pathname, char *basename) {
+static node *find_child(const node *dir, char *basename) {
+  if (dir == NULL || dir->type == FILE_NODE) return NULL;
 
+  for (int i = 0; i < dir->nrde; i++) {
+    if (strcmp(dir->dirents[i]->name, basename) == 0) 
+      return dir->dirents[i];
+  }
+  return NULL;
 }
 
 static node *find_parent(const char *name) {
@@ -89,9 +105,7 @@ int runlink(const char *pathname) { // unlink
 }
 
 void init_ramfs() {
-  root = calloc(1, sizeof(node));
-  root->type = DIR_NODE;
-  root->name = strduo("/");
+  root = new_node(DIR_NODE, "/");
 
   for (int i = 0; i < NRFD; i++) {
     fdesc[i].used = false;
