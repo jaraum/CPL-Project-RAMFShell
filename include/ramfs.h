@@ -23,19 +23,19 @@
 #define EISFILE -5
 
 typedef struct node {
-  enum { FILE_NODE, DIR_NODE } type;
-  struct node **dirents; // if DIR_NODE
-  void *content;
-  int nrde;
-  int size;
-  char *name;
+  enum { FILE_NODE, DIR_NODE } type; // Node type: file or directory
+  struct node **dirents;             // Array of child nodes (only used for directories)
+  void *content;                     // File content data (only used for files)
+  int nrde;                          // Number of entries in this directory
+  int size;                          // Size of the file content in bytes
+  char *name;                        // File or directory name
 } node;
 
 typedef struct FD {
-  bool used;
-  int offset;
-  int flags;
-  node *f;
+  bool used;  // Whether this file descriptor entry is currently in use
+  int offset; // Current read/write position within the file
+  int flags;  // File access flags (e.g., O_RDONLY, O_WRONLY, O_RDWR)
+  node *f;    // Pointer to the file node associated with this descriptor
 } FD;
 
 typedef intptr_t ssize_t;
