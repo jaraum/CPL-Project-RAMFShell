@@ -2,20 +2,21 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define O_APPEND 02000
-#define O_CREAT 0100
-#define O_TRUNC 01000
-#define O_RDONLY 00
-#define O_WRONLY 01
-#define O_RDWR 02
+// FLAG
+#define O_APPEND 02000 // Append: 
+#define O_CREAT  0100  // Create: 
+#define O_TRUNC  01000 // Truncate: 
+#define O_RDONLY 00    // Read only
+#define O_WRONLY 01    // Write only
+#define O_RDWR   02    // Read & Write
 
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
 
 typedef struct node {
-  enum { FNODE, DNODE } type;
-  struct node **dirents; // if DTYPE
+  enum { FILE_NODE, DIR_NODE } type;
+  struct node **dirents; // if DIR_NODE
   void *content;
   int nrde;
   char *name;
