@@ -1,6 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // FLAG
 #define O_APPEND 02000 // Append: 
@@ -14,13 +14,21 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#define SUCCESS 0
+#define PROBLEM 1
+#define FAILURE -1
+#define ENOENT -2
+#define ENOTDIR -3
+#define EINVAL -4
+#define EISFILE -5
+
 typedef struct node {
   enum { FILE_NODE, DIR_NODE } type;
   struct node **dirents; // if DIR_NODE
   void *content;
   int nrde;
-  char *name;
   int size;
+  char *name;
 } node;
 
 typedef struct FD {
