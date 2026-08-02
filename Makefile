@@ -1,10 +1,10 @@
-.PHONY: all run binary clean submit git gdb
+.PHONY: all run binary clean gdb
 
 INC_PATH := include/
 
 all: compile
 
-compile: git
+compile: 
 	@gcc -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
 
 run: compile
@@ -13,19 +13,26 @@ run: compile
 gdb: compile
 	gdb ramfs-shell
 
-git:
-	@git add -A
-	@git commit --allow-empty -m "compile"
+test_address:
+	@clang -fsanitize=address -fno-omit-frame-pointer -ftrapv -Wall -fdiagnostics-color=always -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
+	@./ramfs-shell
+
+test_undefined:
+	@clang -fsanitize=undefined -fno-omit-frame-pointer -ftrapv -Wall -fdiagnostics-color=always -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
+	@./ramfs-shell
+
+test_leak:
+	@clang -fsanitize=leak -fno-omit-frame-pointer -ftrapv -Wall -fdiagnostics-color=always -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
+	@./ramfs-shell
+
+test_memory:
+	@clang -fsanitize=memory -fno-omit-frame-pointer -ftrapv -Wall -fdiagnostics-color=always -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
+	@./ramfs-shell
+
+test_thread:
+	@clang -fsanitize=thread -fno-omit-frame-pointer -ftrapv -Wall -fdiagnostics-color=always -g -std=c17 -O2 -I$(INC_PATH) main.c fs/ramfs.c sh/shell.c -o ramfs-shell
+	@./ramfs-shell
 
 clean:
 	@rm test
 
-submit:
-	$(eval TEMP := $(shell mktemp -d))
-	$(eval BASE := $(shell basename $(CURDIR)))
-	$(eval FILE := ${TEMP}/${TOKEN}.zip)
-	@cd .. && zip -qr ${FILE} ${BASE}/.git
-	@echo "Created submission archive ${FILE}"
-	@curl -m 5 -w "\n" -X POST -F "TOKEN=${TOKEN}" -F "FILE=@${FILE}" \
-		https://oj.cpl.icu/api/v2/submission/lab
-	@rm -r ${TEMP}
