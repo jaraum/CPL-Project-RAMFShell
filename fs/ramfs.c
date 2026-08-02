@@ -11,6 +11,47 @@ node *root = NULL;
 #define MAX_NODES 65536 // Maximum number of nodes in the filesystem
 FD fdesc[NRFD];         // File descriptor table
 
+// Auxiliary functions
+
+static bool valid_path(const char *pathname) {
+
+}
+
+static bool valid_name(const char *name) {
+
+}
+
+static bool valid_fd(int fd) {
+
+}
+
+static bool can_read(const FD *fd) {
+
+}
+
+static bool can_write(const FD *fd) {
+
+}
+
+static node *new_node(int type, char *name) {
+
+}
+
+static node *find_child(const char *pathname, char *basename) {
+
+}
+
+static node *find_parent(const char *name) {
+
+}
+
+static void free_node(node *current) {
+
+}
+
+
+// API functions
+
 node *find(const char *pathname) {
   return NULL;
 }
@@ -43,7 +84,7 @@ int rrmdir(const char *pathname) {
 
 }
 
-int runlink(const char *pathname) {
+int runlink(const char *pathname) { // unlink
 
 }
 

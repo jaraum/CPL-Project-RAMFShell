@@ -49,7 +49,7 @@ ssize_t rread(int fd, void *buf, size_t count);
 off_t rseek(int fd, off_t offset, int whence);
 int rmkdir(const char *pathname);
 int rrmdir(const char *pathname);
-int runlink(const char *pathname);
+int runlink(const char *pathname); // unlink
 void init_ramfs();
 void close_ramfs();
 node *find(const char *pathname);
