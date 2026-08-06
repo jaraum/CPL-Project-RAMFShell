@@ -7,18 +7,67 @@
 
 node *root = NULL;
 
-#define NRFD      4096  // Maximum number of open file descriptors
-#define MAX_NODES 65536 // Maximum number of nodes in the filesystem
-FD fdesc[NRFD];         // File descriptor table
+#define NRFD      4096      // Maximum number of open file descriptors
+#define MAX_NODES 65536     // Maximum number of nodes in the filesystem
+#define MAX_NAME_LENGTH 32  // Maximum name length
+FD fdesc[NRFD];             // File descriptor table
 
 // Auxiliary functions
 
-static bool valid_path(const char *pathname) {
+static void copy_name(char target[33], const char *start, int length) {
+  memcpy(target, start, length);
+  target[length] = '\0';
+}
 
+static bool valid_path(const char *pathname) {
+  if (pathname == NULL || pathname[0] != '/'){
+    return false;
+  }
+  const char *p = pathname;
+
+  while(*p != '\0') {
+    while (*p == '/') {
+      p++;
+    }
+  
+  const char *start = p;
+  while (*p != '\0' && *p != '/') {
+    p++;
+  }
+
+  int length = p-start;
+  if (length == 0) continue;
+
+  if (length > MAX_NAME_LENGTH) {
+    return false;
+  }
+
+  for (int i = 0; i < length; i++) {
+    if (!isalnum((unsigned char)start[i] && start[i] != '.')) {
+      return false;
+    }
+  }
+  }
+
+  return true;
 }
 
 static bool valid_name(const char *name) {
+  if (name == NULL) {
+    return false;
+  }
 
+  int length = strlen(name);
+  if (length <= 0 || length > MAX_NAME_LENGTH) {
+    return false;
+  }
+
+  for (int i = 0; i < length; i++) {
+    if (!isalnum((unsigned char)name[i] && name[i] != '.')) {
+      return false;
+      }
+  }
+  return true;
 }
 
 static bool valid_fd(int fd) {
@@ -35,7 +84,9 @@ static bool can_write(const FD *fd) {
 
 static node *new_node(int type, char *name) {
   node *result = calloc(1, sizeof(node));
-  if (result == NULL) return NULL;
+  if (result == NULL) {
+    return NULL;
+  }
 
   result->type = type;
   result->name = malloc(strlen(name) + 1);
@@ -47,17 +98,37 @@ static node *new_node(int type, char *name) {
   return result;
 }
 
+static bool add_child(node *parent, node *child) {
+  if (parent == NULL || child == NULL || parent->type != DIR_NODE) {
+    return false;
+  }
+  
+  node **new_dirents = realloc(parent->dirents, (parent->nrde + 1) * sizeof(node));
+
+  if (new_dirents == NULL) {
+    return false;
+  }
+  parent->dirents = new_dirents;
+  parent->dirents[parent->nrde] = child;
+  parent->nrde++;
+
+  return true;
+}
+
 static node *find_child(const node *dir, char *basename) {
-  if (dir == NULL || dir->type == FILE_NODE) return NULL;
+  if (dir == NULL || dir->type == FILE_NODE) {
+    return NULL;
+  }
 
   for (int i = 0; i < dir->nrde; i++) {
-    if (strcmp(dir->dirents[i]->name, basename) == 0) 
+    if (strcmp(dir->dirents[i]->name, basename) == 0) {
       return dir->dirents[i];
+    }
   }
   return NULL;
 }
 
-static node *find_parent(const char *name) {
+static node *find_parent(const char *name, char basename[MAX_NAME_LENGTH + 1]) {
 
 }
 
@@ -93,7 +164,7 @@ off_t rseek(int fd, off_t offset, int whence) {
 }
 
 int rmkdir(const char *pathname) {
-
+  
 }
 
 int rrmdir(const char *pathname) {
