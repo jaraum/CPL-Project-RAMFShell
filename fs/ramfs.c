@@ -8,9 +8,10 @@
 node *root = NULL;
 
 #define NRFD      4096      // Maximum number of open file descriptors
-#define MAX_NODES 65536     // Maximum number of nodes in the filesystem
+#define MAX_NODES 65535     // Maximum number of nodes in the filesystem
 #define MAX_NAME_LENGTH 32  // Maximum name length
 FD fdesc[NRFD];             // File descriptor table
+static uint16_t node_count = 0;
 
 // Auxiliary functions
 
@@ -32,31 +33,31 @@ static bool is_valid_name(const char *name) {
   for (int i = 0; i < length; i++) {
     if (!isalnum((unsigned char)name[i] && name[i] != '.')) {
       return false;
-      }
+    }
   }
   return true;
 }
 
 static bool is_valid_path(const char *pathname) { // check with basename
-  if (pathname == NULL || pathname[0] != '/'){
+  if (pathname == NULL || pathname[0] != '/') {
     return false;
   }
   const char *p = pathname;
 
-  while(*p != '\0') {
+  while (*p != '\0') {
     while (*p == '/') {
       ++p;
     }
     if (*p == '\0')
       break;
     const char *q;
-    char name [MAX_NAME_LENGTH + 1];
+    char name[MAX_NAME_LENGTH + 1];
     size_t length;
     q = p;
-    while (q != '\0' && q != '/') 
+    while (q != '\0' && q != '/')
       ++q;
     size_t length = (size_t)(q - p);
-    if (length > MAX_NAME_LENGTH) 
+    if (length > MAX_NAME_LENGTH)
       return false;
     memcpy(name, p, length);
     name[length] = '\0';
@@ -67,9 +68,7 @@ static bool is_valid_path(const char *pathname) { // check with basename
   return true;
 }
 
-static bool valid_fd(int fd) {
-
-}
+static bool valid_fd(int fd) { return fd >= 0 && fd < NRFD && fdesc[fd].used; }
 
 static bool can_read(const FD *fd) {
 
@@ -85,6 +84,11 @@ static node *new_node(int type, char *name) {
     return NULL;
   }
 
+  if (!is_valid_name || node_count > MAX_NODES) {
+    free(result);
+    retrun NULL;
+  }
+
   result->type = type;
   result->name = malloc(strlen(name) + 1);
   if (result->name == NULL) {
@@ -92,6 +96,7 @@ static node *new_node(int type, char *name) {
     return NULL;
   }
   strcpy(result->name, name);
+  ++node_count;
   return result;
 }
 
