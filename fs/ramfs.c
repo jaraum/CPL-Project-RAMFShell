@@ -19,7 +19,7 @@ static void copy_name(char target[33], const char *start, int length) {
   target[length] = '\0';
 }
 
-static bool valid_path(const char *pathname) {
+static bool is_valid_path(const char *pathname) {
   if (pathname == NULL || pathname[0] != '/'){
     return false;
   }
@@ -52,7 +52,7 @@ static bool valid_path(const char *pathname) {
   return true;
 }
 
-static bool valid_name(const char *name) {
+static bool is_valid_name(const char *name) {
   if (name == NULL) {
     return false;
   }
