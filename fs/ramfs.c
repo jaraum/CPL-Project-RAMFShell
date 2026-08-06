@@ -19,45 +19,12 @@ static void copy_name(char target[33], const char *start, int length) {
   target[length] = '\0';
 }
 
-static bool is_valid_path(const char *pathname) {
-  if (pathname == NULL || pathname[0] != '/'){
-    return false;
-  }
-  const char *p = pathname;
-
-  while(*p != '\0') {
-    while (*p == '/') {
-      p++;
-    }
-  
-  const char *start = p;
-  while (*p != '\0' && *p != '/') {
-    p++;
-  }
-
-  int length = p-start;
-  if (length == 0) continue;
-
-  if (length > MAX_NAME_LENGTH) {
-    return false;
-  }
-
-  for (int i = 0; i < length; i++) {
-    if (!isalnum((unsigned char)start[i] && start[i] != '.')) {
-      return false;
-    }
-  }
-  }
-
-  return true;
-}
-
 static bool is_valid_name(const char *name) {
   if (name == NULL) {
     return false;
   }
 
-  int length = strlen(name);
+  size_t length = strlen(name);
   if (length <= 0 || length > MAX_NAME_LENGTH) {
     return false;
   }
@@ -66,6 +33,36 @@ static bool is_valid_name(const char *name) {
     if (!isalnum((unsigned char)name[i] && name[i] != '.')) {
       return false;
       }
+  }
+  return true;
+}
+
+static bool is_valid_path(const char *pathname) { // check with basename
+  if (pathname == NULL || pathname[0] != '/'){
+    return false;
+  }
+  const char *p = pathname;
+
+  while(*p != '\0') {
+    while (*p == '/') {
+      ++p;
+    }
+    if (*p == '\0')
+      break;
+    const char *q;
+    char name [MAX_NAME_LENGTH + 1];
+    size_t length;
+    q = p;
+    while (q != '\0' && q != '/') 
+      ++q;
+    size_t length = (size_t)(q - p);
+    if (length > MAX_NAME_LENGTH) 
+      return false;
+    memcpy(name, p, length);
+    name[length] = '\0';
+    if (!is_valid_name)
+      return false;
+    p = q;
   }
   return true;
 }
