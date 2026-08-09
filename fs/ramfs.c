@@ -61,7 +61,7 @@ static bool is_valid_path(const char *pathname) { // check with basename
       return false;
     memcpy(name, p, length);
     name[length] = '\0';
-    if (!is_valid_name)
+    if (!is_valid_name(pathname))
       return false;
     p = q;
   }
@@ -84,9 +84,9 @@ static node *new_node(int type, char *name) {
     return NULL;
   }
 
-  if (!is_valid_name || node_count > MAX_NODES) {
+  if (!is_valid_name(name) || node_count >= MAX_NODES) {
     free(result);
-    retrun NULL;
+    return NULL;
   }
 
   result->type = type;
@@ -135,7 +135,18 @@ static node *find_parent(const char *name, char basename[MAX_NAME_LENGTH + 1]) {
 }
 
 static void free_node(node *current) {
-
+  if (current == NULL)
+    return;
+  if (current->type == DIR_NODE) {
+    for (int i = 0; i < current->nrde; ++i)
+      free_node(current->dirents[i]);
+    free(current->dirents);
+  } else {
+    free(current->content);
+  }
+  free(current->name);
+  free(current);
+  --node_count;
 }
 
 
