@@ -15,9 +15,33 @@ static uint16_t node_count = 0;
 
 // Auxiliary functions
 
-static void copy_name(char target[33], const char *start, int length) {
-  memcpy(target, start, length);
-  target[length] = '\0';
+static char *get_basename(const char *pathname) {
+  if (pathname == NULL) return NULL;
+  const char *start = pathname;
+  char *basename = calloc(MAX_NAME_LENGTH + 1, 1);
+  if (!basename) return NULL;
+
+  while (*start != '\0') {
+    while (*start == '/') {
+      ++start;
+    }
+    if (*start == '\0')
+      break;
+    const char *end;
+    size_t length;
+    end = start;
+    while (*end != '\0' && *end != '/')
+      ++end;
+    length = (size_t)(end - start);
+    if (length > MAX_NAME_LENGTH) {
+      free(basename);
+      return NULL;
+    }
+    memcpy(basename, start, length);
+    basename[length] = '\0';
+    start = end;
+  }
+  return basename;
 }
 
 static bool is_valid_name(const char *name) {
@@ -26,12 +50,13 @@ static bool is_valid_name(const char *name) {
   }
 
   size_t length = strlen(name);
-  if (length <= 0 || length > MAX_NAME_LENGTH) {
+  if (length == 0 || length > MAX_NAME_LENGTH) {
     return false;
   }
 
   for (int i = 0; i < length; i++) {
-    if (!isalnum((unsigned char)name[i] && name[i] != '.')) {
+    unsigned char c = (unsigned char)name[i];
+    if (!(isalnum(c) || name[i] == '.')) {
       return false;
     }
   }
@@ -54,14 +79,14 @@ static bool is_valid_path(const char *pathname) { // check with basename
     char name[MAX_NAME_LENGTH + 1];
     size_t length;
     q = p;
-    while (q != '\0' && q != '/')
+    while (*q != '\0' && *q != '/')
       ++q;
-    size_t length = (size_t)(q - p);
+    length = (size_t)(q - p);
     if (length > MAX_NAME_LENGTH)
       return false;
     memcpy(name, p, length);
     name[length] = '\0';
-    if (!is_valid_name(pathname))
+    if (!is_valid_name(name))
       return false;
     p = q;
   }
@@ -105,7 +130,7 @@ static bool add_child(node *parent, node *child) {
     return false;
   }
   
-  node **new_dirents = realloc(parent->dirents, (parent->nrde + 1) * sizeof(node));
+  node **new_dirents = realloc(parent->dirents, (size_t)(parent->nrde + 1) * sizeof(*parent->dirents));
 
   if (new_dirents == NULL) {
     return false;
@@ -113,14 +138,15 @@ static bool add_child(node *parent, node *child) {
   parent->dirents = new_dirents;
   parent->dirents[parent->nrde] = child;
   parent->nrde++;
-
   return true;
 }
 
 static node *find_child(const node *dir, char *basename) {
-  if (dir == NULL || dir->type == FILE_NODE) {
+  if (dir == NULL || basename == NULL || dir->type != DIR_NODE) {
     return NULL;
   }
+  if (!is_valid_name(basename))
+    return NULL;
 
   for (int i = 0; i < dir->nrde; i++) {
     if (strcmp(dir->dirents[i]->name, basename) == 0) {
