@@ -26,15 +26,16 @@ static bool is_valid_name(const char *name) {
   }
 
   size_t length = strlen(name);
-  if (length <= 0 || length > MAX_NAME_LENGTH) {
+  if (length == 0 || length > MAX_NAME_LENGTH) {
     return false;
   }
 
-  for (int i = 0; i < length; i++) {
-    if (!isalnum((unsigned char)name[i] && name[i] != '.')) {
+  for (size_t i = 0; i < length; ++i) {
+    unsigned char c = (unsigned char)name[i];
+    if (!(c == '.' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+          (c >= 'a' && c <= 'z')))
       return false;
     }
-  }
   return true;
 }
 
