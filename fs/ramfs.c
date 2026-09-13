@@ -35,7 +35,7 @@ static bool is_valid_name(const char *name) {
     if (!(c == '.' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
           (c >= 'a' && c <= 'z')))
       return false;
-    }
+  }
   return true;
 }
 
@@ -53,7 +53,6 @@ static bool is_valid_path(const char *pathname) { // check with basename
       break;
     const char *q;
     char name[MAX_NAME_LENGTH + 1];
-    size_t length;
     q = p;
     while (q != '\0' && q != '/')
       ++q;
@@ -87,7 +86,7 @@ static node *new_node(int type, char *name) {
 
   if (!is_valid_name || node_count > MAX_NODES) {
     free(result);
-    retrun NULL;
+    return NULL;
   }
 
   result->type = type;
