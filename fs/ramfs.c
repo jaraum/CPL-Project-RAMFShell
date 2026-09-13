@@ -140,6 +140,7 @@ static bool add_child(node *parent, node *child) {
   return true;
 }
 
+// return ptr to basename node
 static node *find_child(const node *dir, char *basename) {
   if (dir == NULL || basename == NULL || dir->type != DIR_NODE) {
     return NULL;
@@ -155,8 +156,37 @@ static node *find_child(const node *dir, char *basename) {
   return NULL;
 }
 
-static node *find_parent(const char *name, char basename[MAX_NAME_LENGTH + 1]) {
+// Return the parent directory and copy the final path component into basename.
+static node *find_parent(const char *pathname, char *basename) {
+  const char *start, *last;
+  char prefix[NRFD + 1];
+  size_t prefix_len;
+  if (!is_valid_path(pathname))
+    return NULL;
+  last = pathname + strlen(pathname);
+  while (last > pathname && last[-1] != '/')
+    --last;
+  if (last == pathname)
+    return NULL;
 
+  start = last;
+  while (start > pathname && start[-1] != '/')
+    --start;
+  if ((size_t)(last - start) > MAX_NAME_LENGTH)
+    return NULL;
+  memcpy(basename, start, (size_t)(last - start));
+  basename[last - start] = '\0';
+  if (!valid_name(basename))
+    return NULL;
+
+  prefix_len = (size_t)(start - pathname);
+  if (prefix_len == 0)
+    return root;
+  if (prefix_len >= sizeof(prefix))
+    return NULL;
+  memcpy(prefix, pathname, prefix_len);
+  prefix[prefix_len] = '\0';
+  return find(prefix);
 }
 
 static void free_node(node *current) {
@@ -178,7 +208,8 @@ static void free_node(node *current) {
 // API functions
 
 node *find(const char *pathname) {
-  return NULL;
+  char component[MAX_NAME_LENGTH + 1];
+  return find_child(pathname, component);
 }
 
 int ropen(const char *pathname, int flags) {
@@ -214,13 +245,15 @@ int runlink(const char *pathname) { // unlink
 }
 
 void init_ramfs() {
+  close_ramfs();
+  
   root = new_node(DIR_NODE, "/");
-
-  for (int i = 0; i < NRFD; i++) {
-    fdesc[i].used = false;
-  }
 }
 
 void close_ramfs() {
-
+  if (root != NULL)
+    free_node(root);
+  root = NULL;
+  node_count = 0;
+  memset(fdesc, 0, sizeof(fdesc));
 }
