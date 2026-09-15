@@ -142,6 +142,17 @@ static bool add_child(node *parent, node *child) {
   return true;
 }
 
+static void remove_child(node *parent, node *child) {
+  for (int i = 0; i < parent->nrde; i++) {
+    if (parent->dirents[i] == child) {
+      memmove(&parent->dirents[i], &parent->dirents[i + 1],
+              (size_t)(parent->nrde - i - 1) * sizeof(parent->dirents));
+      --parent->nrde;
+      return;
+    }
+  }
+}
+
 // return ptr to basename node
 static node *find_child(const node *dir, char *basename) {
   if (dir == NULL || basename == NULL || dir->type != DIR_NODE) {
@@ -191,6 +202,17 @@ static node *find_parent(const char *pathname, char *basename) {
   return find(prefix);
 }
 
+static void invalidate_fds(node *current) {
+  for (int i = 0; i < NRFD; i++) {
+    if (fdesc[i].used && fdesc[i].f == current)
+      fdesc[i].used = false;
+    if (current->type == DIR_NODE)
+      for (int i = 0; i < current->nrde; i++) {
+        invalidate_fds(current->dirents[i]);
+      }
+  }
+}
+
 static void free_node(node *current) {
   if (current == NULL)
     return;
@@ -209,7 +231,7 @@ static void free_node(node *current) {
 
 // API functions
 
-node *find(const char *pathname) {
+node *find(const char *pathname) { // return ptr to basename
   char component[MAX_NAME_LENGTH + 1];
   return find_child(pathname, component);
 }
