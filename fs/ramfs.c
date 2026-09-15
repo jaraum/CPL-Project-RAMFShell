@@ -189,7 +189,7 @@ static node *find_parent(const char *pathname, char *basename) {
     return NULL;
   memcpy(basename, start, (size_t)(last - start));
   basename[last - start] = '\0';
-  if (!valid_name(basename))
+  if (!is_valid_name(basename))
     return NULL;
 
   prefix_len = (size_t)(start - pathname);
@@ -232,8 +232,17 @@ static void free_node(node *current) {
 // API functions
 
 node *find(const char *pathname) { // return ptr to basename
+  if (!is_valid_path(pathname))
+    return NULL;
+  if (strcmp(pathname, "/") == 0)
+    return root;
+
   char component[MAX_NAME_LENGTH + 1];
-  return find_child(pathname, component);
+  node *parent = find_parent(pathname, component);
+  if (parent == NULL)
+    return NULL;
+    
+  return find_child(parent, component);
 }
 
 int ropen(const char *pathname, int flags) {
