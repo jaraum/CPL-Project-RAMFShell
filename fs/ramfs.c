@@ -266,15 +266,49 @@ off_t rseek(int fd, off_t offset, int whence) {
 }
 
 int rmkdir(const char *pathname) {
-  
+  char basename[MAX_NAME_LENGTH + 1];
+  node *parent, *created;
+  if (!is_valid_path(pathname) || find(pathname) != NULL)
+    return FAILURE;
+  parent = find_parent(pathname, basename);
+  if (parent == NULL || parent->type != DIR_NODE)
+    return FAILURE;
+  created = new_node(DIR_NODE, basename);
+  if (created == NULL || !add_child(parent, created)) {
+    free_node(created);
+    return FAILURE;
+  }
+  return SUCCESS;
 }
 
 int rrmdir(const char *pathname) {
-
+  node *target = find(pathname);
+  char basename[MAX_NAME_LENGTH + 1];
+  node *parent = find_parent(pathname, basename);
+  if (target == NULL || target == root || target->type != DIR_NODE ||
+      target->nrde != 0)
+    return FAILURE;
+  if (parent == NULL)
+    return FAILURE;
+  remove_child(parent, target);
+  invalidate_fds(target);
+  free_node(target);
+  return SUCCESS;
 }
 
 int runlink(const char *pathname) { // unlink
-
+  node *target = find(pathname);
+  node *parent;
+  char basename[MAX_NAME_LENGTH + 1];
+  if (target == NULL || target->type != FILE_NODE)
+    return FAILURE;
+  parent = find_parent(pathname, basename);
+  if (parent == NULL)
+    return FAILURE;
+  remove_child(parent, target);
+  invalidate_fds(target);
+  free_node(target);
+  return SUCCESS;
 }
 
 void init_ramfs() {
