@@ -246,11 +246,47 @@ node *find(const char *pathname) { // return ptr to basename
 }
 
 int ropen(const char *pathname, int flags) {
+  char basename[MAX_NAME_LENGTH + 1];
+  node *file = find(pathname);
+  int fd;
+  if (!is_valid_path(pathname))
+    return FAILURE;
+  for (fd = 0; fd < NRFD && fdesc[fd].used; fd++)
+  if (fd == NRFD)
+    return FAILURE;
 
+  if (file == NULL && (flags & O_CREAT)) {
+    node *parent = find_parent(pathname, basename);
+    if (parent == NULL || parent->type != DIR_NODE)
+      return FAILURE;
+    file = new_node(FILE_NODE, basename);
+    if (file == NULL || !add_child(parent, file)) {
+      free_node(file);
+      return FAILURE;
+    }
+  }
+
+  if (file == NULL)
+    return FAILURE;
+
+  if ((flags & O_TRUNC) && can_write(&(FD){.flags = flags}) &&
+      file->type == FILE_NODE) {
+    free(file->content);
+    file->content = NULL;
+    file->size = 0;
+  }
+  fdesc[fd] = (FD){.used = true,
+                   .offset = (flags & O_APPEND) ? file->size : 0,
+                   .flags = flags,
+                   .f = file};
+  return fd;
 }
 
 int rclose(int fd) {
-
+  if (!valid_fd(fd))
+    return FAILURE;
+  fdesc[fd].used = false;
+  return SUCCESS;
 }
 
 ssize_t rwrite(int fd, const void *buf, size_t count) {
@@ -258,11 +294,40 @@ ssize_t rwrite(int fd, const void *buf, size_t count) {
 }
 
 ssize_t rread(int fd, void *buf, size_t count) {
-
+  FD *descriptor;
+  size_t avaliable, amount;
+  if (!valid_fd || buf == NULL)
+    return FAILURE;
+  descriptor = &fdesc[fd];
+  if (!can_read(descriptor) || descriptor->f->type != FILE_NODE || descriptor->offset < 0)
+    return FAILURE;
+  if (descriptor->offset >= descriptor->f->size)
+    return 0;
+  avaliable = (size_t)(descriptor->f->size - descriptor->offset);
+  amount = count < avaliable ? count : avaliable;
+  memcpy(buf, (char*)descriptor->f->content + descriptor->offset, amount);
+  descriptor->offset += (int)amount;
+  return (size_t)amount;
 }
 
 off_t rseek(int fd, off_t offset, int whence) {
-
+  off_t base, target;
+  if (!valid_fd(fd) || fdesc[fd].f->type != FILE_NODE)
+    return FAILURE;
+  if (whence == SEEK_SET)
+    base = 0;
+  else if (whence == SEEK_CUR)
+    base = fdesc[fd].offset;
+  else if (whence == SEEK_END)
+    base = fdesc[fd].f->size;
+  else
+    return FAILURE;
+  
+  target = base + offset;
+  if (target < 0 || target > INT64_MAX)
+    return FAILURE;
+  fdesc[fd].offset = (int)target;
+  return target;
 }
 
 int rmkdir(const char *pathname) {
