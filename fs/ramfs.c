@@ -95,11 +95,13 @@ static bool is_valid_path(const char *pathname) { // check with basename
 static bool valid_fd(int fd) { return fd >= 0 && fd < NRFD && fdesc[fd].used; }
 
 static bool can_read(const FD *fd) {
-
+  int access = fd->flags & 03;
+  return access == O_RDONLY || access == O_RDWR;
 }
 
 static bool can_write(const FD *fd) {
-
+  int access = fd->flags & 03;
+  return access == O_WRONLY || access == O_RDWR;
 }
 
 static node *new_node(int type, char *name) {
